@@ -21,5 +21,5 @@
 
 ### CMAPSS Dataset
   针对于CMAPSS Dataset。我们首先会根据数据的可视化结果，删除相关性弱的特征。其可视化代码与图片在文件夹Feature_Visualization—CMAPSS中 。此外，根据其特性对Label数据增加一个拐点-MAXLIFE.  
-  关于数据集的调用与训练，请在Main.ipynp中使用args.dataset_name = "CMAPSS"，实现数据的加载与训练
+  关于数据集的调用与训练，请在Main.ipynp中使用args.dataset_name = "CMAPSS"，实现数据的加载与训练。
    

@@ -1,5 +1,6 @@
 # Remaining Useful Life Prediction - Inception Attention
- ### This is the project of Remaining Useful Life prediction based on deep learning technology. The model architecture is build based on Transformer.
+ ### This is the project of Remaining Useful Life（RUL） prediction based on deep learning technology. 
+ ### 基于深度学习的剩余使用寿命（RUL）预测项目。
 
 ## 项目
  在本项目中，我们基于Trransformer模型搭建一个名为Inception-Attention的网络模型架构用于实现时间序列相关的剩余使用寿命（RUL）预测问题。在Inception-Attention的模型架构中，我们主要分为三个模块：  

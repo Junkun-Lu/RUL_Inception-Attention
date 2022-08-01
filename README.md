@@ -21,6 +21,7 @@
   针对于三种不同的数据集，我们首先将针对其进行数据加载与处理，相关代码会分别放在CMAPSS_Related，FEMTO——Related与XJTU_Related对应文件夹内。  
 
 ### CMAPSS Dataset
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://drive.google.com/file/d/1dAwjBD3Pl53aPo6koGdZeU6R8IawmU-s/view?usp=sharing)  
   针对于CMAPSS Dataset。我们首先会根据数据的可视化结果，删除相关性弱的特征。其可视化代码与图片在文件夹Feature_Visualization—CMAPSS中 。此外，根据其特性对Label数据增加一个拐点-MAXLIFE.  
   关于数据集的调用与训练，请在Main.ipynp中使用args.dataset_name = "CMAPSS"，实现数据的加载与训练。
    

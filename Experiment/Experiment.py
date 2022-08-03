@@ -51,11 +51,7 @@ class Exp_Inception_Attention(object):
 
     # ------------------- function to build model -------------------------------------
     def _get_model(self):
-        model = Inception_Attention(nb_conv_layers =  self.args.nb_conv_layers,
-                                    filter_num     =  self.args.filter_num,
-                                    filter_size    =  self.args.filter_size,
-
-                                    dropout        =  self.args.dropout,
+        model = Inception_Attention(dropout        =  self.args.dropout,
                                     d_model        =  self.args.d_model,
                                     max_len        =  self.args.max_len,
                                     d_k            =  self.args.d_k,
@@ -70,11 +66,7 @@ class Exp_Inception_Attention(object):
                                     d_ff           =  self.args.d_ff,
                                     n_layers       =  self.args.n_layers,
                                     device         =  self.args.device,
-
-                                    predictor_type =  self.args.predictor_type,
-                                    dataset_name   =  self.args.dataset_name)
-        
-        # calculate the parameter of model
+                                    predictor_type =  self.args.predictor_type)
         print("Parameter :", np.sum([para.numel() for para in model.parameters()]))
         
         return model.double().to(self.args.device)

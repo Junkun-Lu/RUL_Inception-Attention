@@ -14,45 +14,35 @@ input of model: [batch_size, max_len, feature_num]
 output of model: [batch_size, max_len]
 """
 class Inception_Attention(nn.Module):
-  def __init__(self,
-         nb_conv_layers,
-         filter_num,
-         filter_size,
+  def __init__(self,dropout,
+                    d_model,
+                    max_len,
+                    d_k,
+                    d_v,
 
-         dropout,
-         d_model,
-         max_len,
-         d_k,
-         d_v,
+                    n_heads_full,
+                    n_heads_log,
+                    n_heads_local,
+                    n_heads_prob,
+                    n_heads_FFT,
+                    n_heads_auto,
 
-         n_heads_full,
-         n_heads_log,
-         n_heads_local,
-         n_heads_prob,
-         n_heads_FFT,
-         n_heads_auto,
-         
-         moving_avg,
-         d_ff,
-         n_layers,
-         device,
-         
-         predictor_type,
-         dataset_name):
+                    moving_avg,
+                    d_ff,
+                    n_layers,
+                    device,
+
+                    predictor_type):
+
+
+        #  nb_conv_layers,
+        #  filter_num,
+        #  filter_size,
+        #  dataset_name
 
     super(Inception_Attention, self).__init__()
 
     self.predictor_type = predictor_type   # choose which predictor used
-    self.dataset_name = dataset_name   # choose which dataset we used
-
-    if self.dataset_name == "CMAPSS":
-        self.pre_layers = CNN_Layers(nb_conv_layers, filter_num, filter_size).double()  
-    # if self.dataset_name == "FEMTO":
-
-    # if self.dataset_name == "XJTU":
-
-    # output:[batch, max_len, d_model]
-
 
     self.encoder = Encoder(d_model, d_k, d_v,
                   n_heads_full, n_heads_log, n_heads_local,
@@ -76,9 +66,7 @@ class Inception_Attention(nn.Module):
 
   def forward(self, enc_inputs):
 
-    enc_outputs = self.pre_layers(enc_inputs)    # output of CNN_Layers
-
-    enc_outputs = self.encoder(enc_outputs)     # output of Attention_Layers
+    enc_outputs = self.encoder(enc_inputs)     # output of Attention_Layers
 
     if self.predictor_type == "hybrid":      # output of Predictor
         x_full = self.predictor1(enc_outputs)

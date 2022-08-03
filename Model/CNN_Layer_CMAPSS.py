@@ -1,5 +1,7 @@
 import torch.nn as nn
 
+# Actually, don't use this module get better result.
+
 """
 This module only used for dataset CMAPSS
 

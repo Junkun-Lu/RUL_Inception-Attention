@@ -56,6 +56,7 @@ class Exp_Inception_Attention(object):
                                     max_len        =  self.args.max_len,
                                     d_k            =  self.args.d_k,
                                     d_v            =  self.args.d_v,
+
                                     n_heads_full   =  self.args.n_heads_full,
                                     n_heads_log    =  self.args.n_heads_log,
                                     n_heads_local  =  self.args.n_heads_local,
@@ -66,6 +67,7 @@ class Exp_Inception_Attention(object):
                                     d_ff           =  self.args.d_ff,
                                     n_layers       =  self.args.n_layers,
                                     device         =  self.args.device,
+                                    
                                     predictor_type =  self.args.predictor_type)
         print("Parameter :", np.sum([para.numel() for para in model.parameters()]))
         

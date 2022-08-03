@@ -1,15 +1,10 @@
 import torch
 import torch.nn as nn
-from Model.CNN_Layer_CMAPSS import CNN_Layers
 from Model.Encoder import Encoder
 from Model.Predictor import FullPredictor, LinearPredictor, ConvPredictor
 
 
 """
-This Model only used for CMAPSS dataset, Compare to other datasets we used. 
-We used special CNN_Layer_CMAPSS Module get richer features from raw input data.
-"nb_conv_layers", "filter_num" and "filter_size" are the variable used for CNN_Layers_CMAPSS.
-
 input of model: [batch_size, max_len, feature_num]
 output of model: [batch_size, max_len]
 """

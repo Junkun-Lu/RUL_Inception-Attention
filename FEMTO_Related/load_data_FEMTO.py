@@ -10,6 +10,10 @@ from FEMTO_Related.feature_STFT_FEMTO import vibration_train_picture, vibration_
 from FEMTO_Related.feature_STFT_FEMTO import STFT_process, STFT_picture_train, STFT_picture_test, STFT_sliding_window
 from FEMTO_Related.feature_tsfresh_FEMTO import identify_and_remove_unique_columns, tsfresh_sliding_window
 
+"""
+feature_STFT_FEMTO.py  需要更改图片保存地址
+"""
+
 # -------------------- load each file --------------------
 def load_file_acc(file_path, id, bearing_num):
     df = pd.read_csv(file_path, sep=',', header=None)

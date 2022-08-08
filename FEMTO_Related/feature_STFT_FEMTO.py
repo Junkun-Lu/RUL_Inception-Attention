@@ -9,23 +9,21 @@ import numpy as np
 """
 注意更改图片储存地址
 """
-def vibration_train_picture(train_x_dataframe, train_file_num_ls, train_bearing_data_set):
-    plt.figure(figsize=(24, 6))
-    # plot1 - vibration_train1
-    plt.subplot(121)
-    plt.plot(train_x_dataframe.iloc[:2560*train_file_num_ls[0], -1])
-    plt.title("Vibration of {}".format(train_bearing_data_set[0]))
-    plt.xlabel("sample file number")
-    plt.ylabel("vibration signal")
-
-    # plot2 - vibration_train2
-    plt.subplot(122)
-    plt.plot(train_x_dataframe.iloc[2560*train_file_num_ls[0]:, -1])
-    plt.title("Vibration of {}".format(train_bearing_data_set[1]))
-    plt.xlabel("sample file number")
-    plt.ylabel("vibration signal")  
-    plt.tight_layout()     
-    plt.savefig('/content/drive/MyDrive/picture_FEMTO/Vibration_of_training_set/vibration_of_training_set_{0}&{1}.jpg'.format(train_bearing_data_set[0], train_bearing_data_set[1]))   
+def vibration_train_picture(train_x_dataframe, train_file_num_ls, train_bearing_data_set): 
+    plt.figure(figsize=(12, 3*len(train_file_num_ls)))  
+    for i in range(0, len(train_file_num_ls)):
+        temp_split_dataframe = train_x_dataframe.iloc[:2560*train_file_num_ls[i], -1]
+        train_x_dataframe = train_x_dataframe.iloc[2560*train_file_num_ls[i]:, -1]
+        train_x_dataframe = train_x_dataframe.reset_index()
+        
+        nums = i + 1
+        plt.subplot(len(train_file_num_ls), 1, nums)
+        plt.plot(temp_split_dataframe)
+        plt.title("Vibration of {}".format(train_bearing_data_set[i]))
+        plt.xlabel("sample file number")
+        plt.ylabel("vibration signal") 
+    plt.tight_layout()
+    plt.savefig('/content/drive/MyDrive/picture_FEMTO/Vibration_of_training_set/vibration_of_training_set_{}.jpg'.format(train_bearing_data_set[0].split("_")[0]))  
 
 def vibration_test_picture(test_x_dataframe, test_bearing_data_set):
     plt.figure(figsize=(12, 3))
@@ -33,9 +31,8 @@ def vibration_test_picture(test_x_dataframe, test_bearing_data_set):
     plt.title("Vibration of {}".format(test_bearing_data_set[0]))
     plt.xlabel("sample file number")
     plt.ylabel("vibration signal")
-    plt.tight_layout()   
-
-    plt.savefig('/content/drive/MyDrive/picture_FEMTO/Vibration_of_test_set/vibration_of_test_set_{}.jpg'.format(test_bearing_data_set[0]))   
+    plt.tight_layout()     
+    plt.savefig('/content/drive/MyDrive/picture_FEMTO/Vibration_of_test_set/vibration_of_test_set_{}.jpg'.format(test_bearing_data_set[0]))  
 
 
 # -------------------- STFT in each file calculate --------------------
@@ -52,38 +49,26 @@ def STFT_process(vibration, STFT_window_len, STFT_overlap_num):
 """
 # 绘制每个Bearing第一个和最后一个文件的STFT图
 def STFT_picture_train(train_stft_feature, train_stft_f, train_stft_t, train_file_num_ls, train_bearing_data_set):
-    plt.figure(figsize=(12, 6))
-    # plot1 - STFT of Bearingx_1 in first file
-    plt.subplot(221)   
-    plt.pcolormesh(train_stft_t, train_stft_f, train_stft_feature[0,::], shading='gouraud')
-    plt.title("STFT of {} in first file".format(train_bearing_data_set[0]))
-    plt.xlabel("time(s)")
-    plt.ylabel("Frequency(Hz)")
+    plt.figure(figsize=(12, 3*len(train_file_num_ls)))
+    for i in range(0, len(train_file_num_ls)):
+        split_train_stft_feature = train_stft_feature[0:train_file_num_ls[i], ::]
+        train_stft_feature = train_stft_feature[train_file_num_ls[i]:, ::]
 
-    # plot2 - STFT of Bearingx_1 in last file
-    plt.subplot(222)   
-    plt.pcolormesh(train_stft_t, train_stft_f, train_stft_feature[train_file_num_ls[0],::], shading='gouraud')
-    plt.title("STFT of {} in last file".format(train_bearing_data_set[0]))
-    plt.xlabel("time(s)")
-    plt.ylabel("Frequency(Hz)")
+        # plot1 - STFT of bearingx_i in first file
+        plt.subplot(len(train_file_num_ls), 2, int(2*i+1))
+        plt.pcolormesh(train_stft_t, train_stft_f, split_train_stft_feature[0, ::], shading='gouraud')
+        plt.title("STFT of {} in first file".format(train_bearing_data_set[i]))
+        plt.xlabel("time(s)")
+        plt.ylabel("Frequency(Hz)")  
 
-    # plot3 - STFT of Bearingx_2 in first file
-    plt.subplot(223)   
-    plt.pcolormesh(train_stft_t, train_stft_f, train_stft_feature[int(train_file_num_ls[0]+1),::], shading='gouraud')
-    plt.title("STFT of {} in first file".format(train_bearing_data_set[1]))
-    plt.xlabel("time(s)")
-    plt.ylabel("Frequency(Hz)")
-
-    # plot3 - STFT of Bearingx_2 in first file
-    plt.subplot(224)   
-    plt.pcolormesh(train_stft_t, train_stft_f, train_stft_feature[-1,::], shading='gouraud')
-    plt.title("STFT of {} in last file".format(train_bearing_data_set[1]))
-    plt.xlabel("time(s)")
-    plt.ylabel("Frequency(Hz)")
-
+        # plot2 - STFT of bearingx_i in last file
+        plt.subplot(len(train_file_num_ls), 2, int(2*i+2))  
+        plt.pcolormesh(train_stft_t, train_stft_f, split_train_stft_feature[-1, ::], shading='gouraud')
+        plt.title("STFT of {} in first file".format(train_bearing_data_set[i]))
+        plt.xlabel("time(s)")
+        plt.ylabel("Frequency(Hz)")
     plt.tight_layout()
-    plt.savefig('/content/drive/MyDrive/picture_FEMTO/STFT_picture/STFT_train_picture/STFT_training_{0}&{1}.jpg'.format(train_bearing_data_set[0],train_bearing_data_set[1]))
-
+    plt.savefig('/content/drive/MyDrive/picture_FEMTO/STFT_picture/STFT_train_picture/STFT_of_training_set_{}.jpg'.format(train_bearing_data_set[0].split("_")[0]))      
 
 def STFT_picture_test(test_stft_feature, test_stft_f, test_stft_t, test_bearing_data_set):
     plt.figure(figsize=(12, 3))
@@ -102,8 +87,7 @@ def STFT_picture_test(test_stft_feature, test_stft_f, test_stft_t, test_bearing_
     plt.ylabel("Frequency(Hz)")
 
     plt.tight_layout()
-
-    plt.savefig('/content/drive/MyDrive/picture_FEMTO/STFT_picture/STFT_test_picture/STFT_test_{}.jpg'.format(test_bearing_data_set[0])) 
+    plt.savefig('/content/drive/MyDrive/picture_FEMTO/STFT_picture/STFT_test_picture/STFT_test_{}.jpg'.format(test_bearing_data_set[0]))    
 
   
 # -------------------- STFT的移动滑窗 --------------------

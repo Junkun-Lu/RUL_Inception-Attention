@@ -223,15 +223,19 @@ def train_test_generator(pre_process_type, train_root_dir, train_bearing_data_se
         # **window_length**
         # window_length_train
         train_y_array = train_y_dataframe.values
-        stand_train_stft_feature1 = stand_train_stft_feature[0:train_file_num_ls[0], ::]
-        train_y_array1 = train_y_array[0:train_file_num_ls[0], :]
-        stand_train_stft_feature2 = stand_train_stft_feature[train_file_num_ls[0]:, ::]
-        train_y_array2 = train_y_array[train_file_num_ls[0]:, :]
+        win_train_x_ls, win_train_y_ls = [], []
+        for i in range(0, len(train_file_num_ls)):
+            split_stand_train_stft_feature = stand_train_stft_feature[0:train_file_num_ls[i], ::]
+            split_train_y_array = train_y_array[0:train_file_num_ls[i], :]
+            stand_train_stft_feature = stand_train_stft_feature[train_file_num_ls[i]:, ::]
+            train_y_array = train_y_array[train_file_num_ls[i]:, :]
 
-        win_train_x1, win_train_y1 = STFT_sliding_window(stand_train_stft_feature1, train_y_array1, window_length)
-        win_train_x2, win_train_y2 = STFT_sliding_window(stand_train_stft_feature2, train_y_array2, window_length)
-        X_train = np.concatenate([win_train_x1, win_train_x2], axis=0)
-        y_train = np.concatenate([win_train_y1, win_train_y2], axis=0)
+            win_train_x, win_train_y = STFT_sliding_window(split_stand_train_stft_feature, split_train_y_array, window_length)   
+            win_train_x_ls.append(win_train_x) 
+            win_train_y_ls.append(win_train_y)
+        X_train = np.concatenate(win_train_x_ls, axis=0)
+        y_train = np.concatenate(win_train_y_ls, axis=0)
+
         print("the shape of training set is {0} and the shape of train label is {1}".format(X_train.shape, y_train.shape))
 
         # window_length_test
@@ -241,9 +245,6 @@ def train_test_generator(pre_process_type, train_root_dir, train_bearing_data_se
 
 
     # -------------------------------------------- tsfresh ---------------------------------------------------------------------
-    """
-    记得更改提取的特征的储存位置
-    """
     if pre_process_type == "tsfresh":
         # 提取特征并将训练集和label组合在一起
         train_fea_df = extract_features(train_x_dataframe, column_id="id", column_sort="file_time", default_fc_parameters=EfficientFCParameters())
@@ -262,7 +263,7 @@ def train_test_generator(pre_process_type, train_root_dir, train_bearing_data_se
         # 去掉数据集中相关性不大的特征
         train_fea_rul_df = train_fea_rul_df.drop(drop_feature_list, axis=1)
         test_fea_rul_df = test_fea_rul_df.drop(drop_feature_list, axis=1)
-        train_fea_rul_df.to_csv("/content/drive/MyDrive/picture_FEMTO/tsfresh_feature_CSV/train_{0}&{1}.csv".format(train_bearing_data_set[0], train_bearing_data_set[1]), index=True, sep=',')
+        train_fea_rul_df.to_csv("/content/drive/MyDrive/picture_FEMTO/tsfresh_feature_CSV/train_{}.csv".format(train_bearing_data_set[0].split("_")[0]), index=True, sep=',')
         test_fea_rul_df.to_csv("/content/drive/MyDrive/picture_FEMTO/tsfresh_feature_CSV/test_{}.csv".format(test_bearing_data_set[0]), index=True, sep=',')
         print(len(list(train_fea_rul_df)), " feature are selected")
  
@@ -276,16 +277,21 @@ def train_test_generator(pre_process_type, train_root_dir, train_bearing_data_se
 
         # **sliding_window_tsfresh**
         # sliding_window_train
-        fea_np1 = train_fea_rul_df.iloc[:train_file_num_ls[0], :-1].values
-        rul_np1 = train_fea_rul_df.iloc[:train_file_num_ls[0], -1:].values
-        fea_np2 = train_fea_rul_df.iloc[train_file_num_ls[0]:, :-1].values
-        rul_np2 = train_fea_rul_df.iloc[train_file_num_ls[0]:, -1:].values
+        train_fea_np = train_fea_rul_df.iloc[:, :-1].values
+        train_rul_np = train_fea_rul_df.iloc[:, -1:].values
+        win_train_x_ls, win_train_y_ls = [], []
+        for i in range(0,len(train_file_num_ls)):
+            temp_fea_np = train_fea_np[:train_file_num_ls[i], :]
+            temp_rul_np = train_rul_np[:train_file_num_ls[i], :]
+            train_fea_np = train_fea_np[train_file_num_ls[i]:, :]
+            train_rul_np = train_rul_np[train_file_num_ls[i]:, :]
 
-        win_train_x1, win_train_y1 = tsfresh_sliding_window(fea_np1, rul_np1, window_length)
-        win_train_x2, win_train_y2 = tsfresh_sliding_window(fea_np2, rul_np2, window_length)
-        X_train = np.concatenate((win_train_x1, win_train_x2), axis=0)
-        y_train = np.concatenate((win_train_y1, win_train_y2), axis=0) 
-        print("the shape of training set is {0} and the shape of train label is {1}".format(X_train.shape, y_train.shape))        
+            win_train_x, win_train_y = tsfresh_sliding_window(temp_fea_np, temp_rul_np, window_length)
+            win_train_x_ls.append(win_train_x)
+            win_train_y_ls.append(win_train_y)
+        X_train = np.concatenate(win_train_x_ls, axis=0)
+        y_train = np.concatenate(win_train_y_ls, axis=0)
+        print("the shape of training set is {0} and the shape of train label is {1}".format(X_train.shape, y_train.shape))           
         
         # sliding_window_test
         fea_np = test_fea_rul_df.iloc[:, :-1].values

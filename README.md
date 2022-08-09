@@ -28,3 +28,5 @@
 ### FEMTO Bearing Dataset  
   针对FEMTO Bearing Dataset,我们将从STFT与tsfresh做特征提取中选择一种方法进行数据预处理, 其剩余使用寿命, 水平与纵向加速度的可视化, 以及STFT方法的可视化的图片在文件夹Visualization_FEMTO中。  
   
+### XJTU Bearing Dataset  
+  该数据集类似于FEMTO Bearing Dataset, 唯一的不同点在于该数据集在相同的采样频率之下,每个时间点采样时间更长,参数更多。 基于FEMTO与XJTU数据类型相似的原因,我们同样采用STFT与tsfresh两种方法对数据进行数据预处理。

@@ -22,6 +22,9 @@
 
 ### CMAPSS Dataset
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://drive.google.com/file/d/1dAwjBD3Pl53aPo6koGdZeU6R8IawmU-s/view?usp=sharing)  
-  针对于CMAPSS Dataset。我们首先会根据数据的可视化结果，删除相关性弱的特征。其可视化代码与图片在文件夹Feature_Visualization—CMAPSS中 。此外，根据其特性对Label数据增加一个拐点-MAXLIFE.  
+  针对于CMAPSS Dataset。我们首先会根据数据的可视化结果，删除相关性弱的特征。其可视化代码与图片在文件夹Feature_Visualization_CMAPSS中 。此外，根据其特性对Label数据增加一个拐点-MAXLIFE.  
   关于数据集的调用与训练，请在Main.ipynp中使用args.dataset_name = "CMAPSS"，实现数据的加载与训练。
-   
+  
+### FEMTO Bearing Dataset  
+  针对FEMTO Bearing Dataset,我们将从STFT与tsfresh做特征提取中选择一种方法进行数据预处理, 其剩余使用寿命, 水平与纵向加速度的可视化, 以及STFT方法的可视化的图片在文件夹Visualization_FEMTO中。  
+  

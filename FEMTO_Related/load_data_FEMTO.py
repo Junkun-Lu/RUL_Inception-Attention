@@ -9,10 +9,24 @@ from sklearn.model_selection import train_test_split
 from FEMTO_Related.feature_STFT_FEMTO import vibration_train_picture, vibration_test_picture
 from FEMTO_Related.feature_STFT_FEMTO import STFT_process, STFT_picture_train, STFT_picture_test, STFT_sliding_window
 from FEMTO_Related.feature_tsfresh_FEMTO import identify_and_remove_unique_columns, tsfresh_sliding_window
+from FEMTO_Related.feature_vibration_FEMTO import vibration_sliding_window
 
 """
-feature_STFT_FEMTO.py  需要更改图片保存地址
+feature_STFT_FEMTO.py  需要更改图片保存地址,
+在该文件中,我们采用了三种不同的方法对数据进行预处理与加载,生成train_set, validation_set与test_set
+方法一: 我们带用了短时傅里叶变化对每一个采样时间中的数据进行特征提取,每个文件生成一个类似于二维图像的特征;
+方法二: 我们直接采用tsfresh对数据进行特征提取;
+方法三: 通过将水平与纵向加速度求和,并在之后用卷积神经网络对数据进行特征提取
 """
+
+import pandas as pd
+import numpy as np
+import math
+import os
+import matplotlib.pyplot as plt
+from tsfresh.feature_extraction import extract_features, EfficientFCParameters 
+from tsfresh.utilities.dataframe_functions import impute
+from sklearn.model_selection import train_test_split
 
 # -------------------- load each file --------------------
 def load_file_acc(file_path, id, bearing_num):
@@ -56,7 +70,7 @@ def get_bearing_acc(folder_path, bearing_num):
 def rul_train(file_num, bearing_num):
     rul_ls = []
     for i in range(1, int(file_num)+1):
-        rul_time = (file_num - i)  
+        rul_time = (file_num - i) * 10 
         rul_ls.append(rul_time)
     rul_dataframe = pd.DataFrame(rul_ls, columns=['RUL'])
     rul_dataframe["id"] = [int(str(bearing_num)+f"{str(id+1).zfill(4)}") for id in range(0, file_num)]
@@ -67,7 +81,7 @@ def rul_train(file_num, bearing_num):
 def rul_test(file_num_full, file_num, bearing_num):
     rul_ls = []
     for i in range(1, int(file_num+1)):
-        rul_time = (file_num_full - i)
+        rul_time = (file_num_full - i) * 10 
         rul_ls.append(rul_time)
     rul_dataframe = pd.DataFrame(rul_ls, columns=['RUL'])
     rul_dataframe["id"] = [int(str(bearing_num)+f"{str(id+1).zfill(4)}") for id in range(0, file_num)]
@@ -168,6 +182,69 @@ def train_test_generator(pre_process_type, train_root_dir, train_bearing_data_se
     # 加载原始数据并组合,绘制rul与水平&纵向加速度图
     train_x_dataframe, train_y_dataframe, train_file_num_ls = data_load(train_root_dir, train_bearing_data_set, flag="train")
     test_x_dataframe, test_y_dataframe, test_file_num_ls = data_load(test_root_dir, test_bearing_data_set, flag="test")
+
+    # --------------------------------------- vibration -------------------------------------------------------------------------------
+    if pre_process_type == "Vibration":
+        # 计算训练集和测试集的合力vibration, 再将训练集根据文件分为两个
+        train_x_dataframe["vibration"] = train_x_dataframe.apply(lambda x: math.sqrt(x['horiz_acc']**2 + x['vert_acc']**2), axis=1)
+        vibration_train_picture(train_x_dataframe, train_file_num_ls, train_bearing_data_set)
+        test_x_dataframe["vibration"] = test_x_dataframe.apply(lambda x: math.sqrt(x['horiz_acc']**2 + x['vert_acc']**2), axis=1)
+        vibration_test_picture(test_x_dataframe, test_bearing_data_set)
+
+        # **standarlization**        
+        vibration_train_x_np = train_x_dataframe[["vibration"]].values
+        vibration_test_x_np = test_x_dataframe[["vibration"]].values 
+
+        vibration_mean = np.mean(vibration_train_x_np, axis=0).reshape(-1, 1) 
+        vibration_std = np.std(vibration_train_x_np, axis=0).reshape(-1, 1) 
+
+        stand_train_vibration_feature = (vibration_train_x_np - vibration_mean) /  vibration_std
+        stand_test_vibration_feature = (vibration_test_x_np - vibration_mean) / vibration_std
+
+        # **split based file_num**
+        train_split_ls = []
+        for i in range(0, int(len(stand_train_vibration_feature)/2560)):
+            split_file_feature_train = stand_train_vibration_feature[2560*i:2560*(i+1), :]
+            split_file_feature_train = split_file_feature_train.transpose(1, 0)
+            train_split_ls.append(split_file_feature_train)
+        
+        train_file_splited_feature = np.concatenate(train_split_ls, axis=0)
+
+        test_split_ls = []
+        for i in range(0, int(len(stand_test_vibration_feature)/2560)):
+            split_file_feature_test = stand_test_vibration_feature[2560*i:2560*(i+1), :]
+            split_file_feature_test = split_file_feature_test.transpose(1, 0)
+            test_split_ls.append(split_file_feature_test)
+        
+        test_file_splited_feature = np.concatenate(test_split_ls, axis=0)
+
+
+        # stand_trian_x_array = vibration_file_split(stand_train_vibration_feature)
+        # stand_test_x_array = vibration_file_split(stand_test_vibration_feature)
+
+        # **window_length**
+        # window_length_train
+        train_y_array = train_y_dataframe.values
+        win_train_x_ls, win_train_y_ls = [], []
+        for i in range(0, len(train_file_num_ls)):
+            split_trian_x_array = train_file_splited_feature[0:train_file_num_ls[i], :]
+            split_train_y_array = train_y_array[0:train_file_num_ls[i], :]
+            train_file_splited_feature = train_file_splited_feature[train_file_num_ls[i]:, :]
+            train_y_array = train_y_array[train_file_num_ls[i]:, :]
+
+            win_train_x, win_train_y = vibration_sliding_window(split_trian_x_array, split_train_y_array, window_length)
+            win_train_x_ls.append(win_train_x) 
+            win_train_y_ls.append(win_train_y)
+        X_train = np.concatenate(win_train_x_ls, axis=0)
+        y_train = np.concatenate(win_train_y_ls, axis=0)
+
+        print("the shape of training set is {0} and the shape of train label is {1}".format(X_train.shape, y_train.shape))
+
+        # window_length_test
+        test_y_array = test_y_dataframe.values
+        test_X, test_y = STFT_sliding_window(test_file_splited_feature, test_y_array, window_length)
+        print("the shape of test_X is {0} and the shape of test_y is {1}".format(test_X.shape, test_y.shape))                    
+
 
     # --------------------------------------- STFT -------------------------------------------------------------------------------
     if pre_process_type == "STFT":        

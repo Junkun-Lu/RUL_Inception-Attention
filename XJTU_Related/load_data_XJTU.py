@@ -134,7 +134,7 @@ def data_load(root_dir, bearing_data_set, flag="train"):
 
 
 # ------------------------ 数据加载与处理函数 --------------------------
-def train_test_generator(pre_process_type, root_dir, train_bearing_data_set, test_bearing_data_set, STFT_window_len, STFT_overlap_num, window_length, validation_rate):
+def train_test_generator_XJTU(pre_process_type, root_dir, train_bearing_data_set, test_bearing_data_set, STFT_window_len, STFT_overlap_num, window_length, validation_rate):
     # 加载原始数据并组合,绘制rul与水平&纵向加速度图
     train_x_dataframe, train_y_dataframe, train_file_num_ls = data_load(root_dir, train_bearing_data_set, flag="train")
     test_x_dataframe, test_y_dataframe, test_file_num_ls = data_load(root_dir, test_bearing_data_set, flag="test")

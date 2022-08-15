@@ -198,7 +198,7 @@ def cmapss_data_train_vali_loader(data_path,
 
     if normalization == "znorm":
         mean = train_FD.iloc[:, 2:-1].mean()
-        std = train_FD.iloc[:, 2:-1].std()
+        std  = train_FD.iloc[:, 2:-1].std()
         std.replace(0, 1, inplace=True)
 
         # training dataset
@@ -209,7 +209,7 @@ def cmapss_data_train_vali_loader(data_path,
     if normalization == "minmax":
         min_ = train_FD.iloc[:, 2:-1].min()
         max_ = train_FD.iloc[:, 2:-1].max()
-        dis = max_ - min_
+        dis  = max_ - min_
         dis.replace(0, 1, inplace=True)
 
         # training dataset

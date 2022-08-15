@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 from torch.utils.data import Dataset
 
 #  ---------------------------- Dataset ----------------------------------

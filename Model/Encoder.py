@@ -58,36 +58,36 @@ class Encoder_Layer(nn.Module):
         attention_layer_list = []   # 将所有的masked-attention添加到里面
         for type_attention in attention_layer_types:
             if type_attention == "Full":
-                attention_layer_list.append(Attention_Layer(attention = Full_Attention(mask_flag=False, 
-                                      attention_dropout=dropout, 
-                                      output_attention=output_attention),
-                                      input_dim = d_model,
-                                      output_dim = d_model_each_head*n_heads_full,
-                                      type_attention = type_attention,
-                                      d_model_type = d_model_each_head*n_heads_full,
-                                      n_heads_type = n_heads_full,
-                                      d_keys = d_keys,
-                                      d_values = d_values,
-                                      causal_kernel_size = causal_kernel_size,
-                                      value_kernel_size = value_kernel_size,
-                                      resid_drop = dropout,
-                                      auto_moving_avg = auto_moving_avg))
-            if type_attention == "Local":
-                attention_layer_list.append(Attention_Layer(attention = Local_Attention(mask_flag=True, 
-                                                     attention_dropout=dropout, 
-                                                     output_attention=output_attention),
-                                      input_dim = d_model,
-                                      output_dim = d_model_each_head*n_heads_local,
-                                      type_attention = type_attention,
-                                      d_model_type = d_model_each_head*n_heads_local,
-                                      n_heads_type = n_heads_local,
-                                      d_keys = d_keys,
-                                      d_values = d_values,
-                                      causal_kernel_size = causal_kernel_size,
-                                      value_kernel_size = value_kernel_size,
-                                      resid_drop = dropout,
-                                      auto_moving_avg = auto_moving_avg))   
-            if type_attention == "Log":
+                attention_layer_list.append(Attention_Layer(attention           = Full_Attention(mask_flag          = False, 
+                                                                                                attention_dropout   = dropout, 
+                                                                                                output_attention    = output_attention),
+                                                            input_dim           = d_model,
+                                                            output_dim          = d_model_each_head*n_heads_full,
+                                                            type_attention      = type_attention,
+                                                            d_model_type        = d_model_each_head*n_heads_full,
+                                                            n_heads_type        = n_heads_full,
+                                                            d_keys              = d_keys,
+                                                            d_values            = d_values,
+                                                            causal_kernel_size  = causal_kernel_size,
+                                                            value_kernel_size   = value_kernel_size,
+                                                            resid_drop          = dropout,
+                                                            auto_moving_avg     = auto_moving_avg))
+            elif type_attention == "Local":
+                attention_layer_list.append(Attention_Layer(attention           = Local_Attention(mask_flag         = True, 
+                                                                                                  attention_dropout = dropout, 
+                                                                                                  output_attention  = output_attention),
+                                                            input_dim           = d_model,
+                                                            output_dim          = d_model_each_head*n_heads_local,
+                                                            type_attention      = type_attention,
+                                                            d_model_type        = d_model_each_head*n_heads_local,
+                                                            n_heads_type        = n_heads_local,
+                                                            d_keys              = d_keys,
+                                                            d_values            = d_values,
+                                                            causal_kernel_size  = causal_kernel_size,
+                                                            value_kernel_size   = value_kernel_size,
+                                                            resid_drop          = dropout,
+                                                            auto_moving_avg     = auto_moving_avg))   
+            elif type_attention == "Log":
                 attention_layer_list.append(Attention_Layer(attention = LocalLog_Attention(mask_flag=True, 
                                                       attention_dropout=dropout, 
                                                       output_attention=output_attention),
@@ -102,53 +102,53 @@ class Encoder_Layer(nn.Module):
                                       value_kernel_size = value_kernel_size,
                                       resid_drop = dropout,
                                       auto_moving_avg = auto_moving_avg))
-            if type_attention == "Prob":
-                attention_layer_list.append(Attention_Layer(attention = ProbSparse_Attention(mask_flag=True,
-                                                       factor=5, 
-                                                       scale=None,
-                                                       attention_dropout=dropout,
-                                                       output_attention=output_attention),
-                                      input_dim = d_model,
-                                      output_dim = d_model_each_head*n_heads_prob,
-                                      type_attention = type_attention,
-                                      d_model_type = d_model_each_head*n_heads_prob,
-                                      n_heads_type = n_heads_prob,
-                                      d_keys = d_keys,
-                                      d_values = d_values,
-                                      causal_kernel_size = causal_kernel_size,
-                                      value_kernel_size = value_kernel_size,
-                                      resid_drop = dropout,
-                                      auto_moving_avg = auto_moving_avg))
-            if type_attention == "Auto":
-                attention_layer_list.append(Attention_Layer(attention = Auto_Attention(mask_flag=True,
-                                                    factor=5, 
-                                                    scale=None,
-                                                    attention_dropout=dropout,
-                                                    output_attention=output_attention),
-                                      input_dim = d_model,
-                                      output_dim = d_model_each_head*n_heads_auto,
-                                      type_attention = type_attention,
-                                      d_model_type = d_model_each_head*n_heads_auto,
-                                      n_heads_type = n_heads_auto,
-                                      d_keys = d_keys,
-                                      d_values = d_values,
-                                      causal_kernel_size = causal_kernel_size,
-                                      value_kernel_size = value_kernel_size,
-                                      resid_drop = dropout,
-                                      auto_moving_avg = auto_moving_avg))  
-            if type_attention == "FFT":
-                 attention_layer_list.append(Attention_Layer(attention = FFT_Attention(),
-                                       input_dim = d_model,
-                                       output_dim = d_model_each_head*n_heads_fft,
-                                       type_attention = type_attention,
-                                       d_model_type = d_model_each_head*n_heads_fft,
-                                       n_heads_type = n_heads_fft,
-                                       d_keys = d_keys,
-                                       d_values = d_values,
-                                       causal_kernel_size = causal_kernel_size,
-                                       value_kernel_size = value_kernel_size,
-                                       resid_drop = dropout,
-                                       auto_moving_avg = auto_moving_avg))  
+            elif type_attention == "Prob":
+                attention_layer_list.append(Attention_Layer(attention           = ProbSparse_Attention(mask_flag            = True,
+                                                                                                       factor               = 5, 
+                                                                                                       scale                = None,
+                                                                                                       attention_dropout    = dropout,
+                                                                                                       output_attention     = output_attention),
+                                                            input_dim           = d_model,
+                                                            output_dim          = d_model_each_head*n_heads_prob,
+                                                            type_attention      = type_attention,
+                                                            d_model_type        = d_model_each_head*n_heads_prob,
+                                                            n_heads_type        = n_heads_prob,
+                                                            d_keys              = d_keys,
+                                                            d_values            = d_values,
+                                                            causal_kernel_size  = causal_kernel_size,
+                                                            value_kernel_size   = value_kernel_size,
+                                                            resid_drop          = dropout,
+                                                            auto_moving_avg     = auto_moving_avg))
+            elif type_attention == "Auto":
+                attention_layer_list.append(Attention_Layer(attention           = Auto_Attention(mask_flag          = True,
+                                                                                                 factor             = 5, 
+                                                                                                 scale              = None,
+                                                                                                 attention_dropout  = dropout,
+                                                                                                 output_attention   = output_attention),
+                                                            input_dim           = d_model,
+                                                            output_dim          = d_model_each_head*n_heads_auto,
+                                                            type_attention      = type_attention,
+                                                            d_model_type        = d_model_each_head*n_heads_auto,
+                                                            n_heads_type        = n_heads_auto,
+                                                            d_keys              = d_keys,
+                                                            d_values            = d_values,
+                                                            causal_kernel_size  = causal_kernel_size,
+                                                            value_kernel_size   = value_kernel_size,
+                                                            resid_drop          = dropout,
+                                                            auto_moving_avg     = auto_moving_avg))  
+            elif type_attention == "FFT":
+                 attention_layer_list.append(Attention_Layer(attention          = FFT_Attention(),
+                                                             input_dim          = d_model,
+                                                             output_dim         = d_model_each_head*n_heads_fft,
+                                                             type_attention     = type_attention,
+                                                             d_model_type       = d_model_each_head*n_heads_fft,
+                                                             n_heads_type       = n_heads_fft,
+                                                             d_keys             = d_keys,
+                                                             d_values           = d_values,
+                                                             causal_kernel_size = causal_kernel_size,
+                                                             value_kernel_size  = value_kernel_size,
+                                                             resid_drop         = dropout,
+                                                             auto_moving_avg    = auto_moving_avg))  
         # 整合所有的mask_attention
         self.attention_layer_list = nn.ModuleList(attention_layer_list)
 
@@ -160,14 +160,14 @@ class Encoder_Layer(nn.Module):
         d_ff = d_ff or int(d_model*2)
         self.forward_kernel_size = forward_kernel_size
 
-        self.conv1 = nn.Conv1d(in_channels = d_model,
-                    out_channels = d_ff,
-                    kernel_size = self.forward_kernel_size)
+        self.conv1 = nn.Conv1d(in_channels  = d_model,
+                               out_channels = d_ff,
+                               kernel_size  = self.forward_kernel_size)
         self.activation1 = F.relu if activation == "relu" else F.gelu
 
-        self.conv2 = nn.Conv1d(in_channels = d_ff,
-                    out_channels = d_model,
-                    kernel_size = self.forward_kernel_size)
+        self.conv2 = nn.Conv1d(in_channels  = d_ff,
+                               out_channels = d_model,
+                               kernel_size  = self.forward_kernel_size)
         self.activation2 = F.relu if activation == "relu" else F.gelu
         
         self.norm2 = nn.LayerNorm(d_model)
@@ -199,13 +199,13 @@ class Encoder_Layer(nn.Module):
         y = x = self.norm1(x)    # [B, L, D]
 
         padding_y1 = nn.functional.pad(y.permute(0, 2, 1),
-                        pad = (forward_padding_size, forward_padding_size),
-                        mode = 'replicate')
+                                       pad  = (forward_padding_size, forward_padding_size),
+                                       mode = 'replicate')
         y = self.dropout(self.activation1(self.conv1(padding_y1)))
 
         padding_y2 = nn.functional.pad(y,
-                        pad = (forward_padding_size, forward_padding_size),
-                        mode = 'replicate')
+                                       pad  = (forward_padding_size, forward_padding_size),
+                                       mode = 'replicate')
         y = self.dropout(self.activation2(self.conv2(padding_y2).permute(0, 2, 1)))
 
         y = self.norm2(x + y)

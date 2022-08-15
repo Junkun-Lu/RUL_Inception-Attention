@@ -1,3 +1,5 @@
+import numpy as np
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -45,25 +47,9 @@ class Preprocess_Layer_STFT(nn.Module):
                 nn.ReLU(inplace = True)
             ))
 
-
-
-        # 不用可分离卷积
-        # for i in range(preprocess_layer_num):
-        #     if i == 0:
-        #         in_channel = 1
-        #     else:
-        #         in_channel = preprocess_filter_num
-            
-        #     preprocess_layer_list.append(nn.Sequential(
-        #         nn.Conv2d(in_channels = in_channel,
-        #              out_channels = preprocess_filter_num,
-        #              kernel_size = (preprocess_kernel_size, preprocess_kernel_size)),
-        #         nn.ReLU(inplace = True),
-        #         nn.BatchNorm2d(preprocess_filter_num)
-        #     ))
         self.preprocess_layers = nn.ModuleList(preprocess_layer_list)
 
-        # self.flatten = torch.nn.Flatten(start_dim = 1, end_dim = -1)
+
 
     def forward(self, x):
         B, L, F_H, F_W = x.shape
@@ -81,7 +67,6 @@ class Preprocess_Layer_STFT(nn.Module):
                  stride = (1, 1))
         # print(x.shape)
 
-        # x = self.flatten(x)
         x = x.view(B, L, -1)
         return x
 
@@ -113,7 +98,10 @@ class Preprocess_Layer_Conv(nn.Module):
            preprocess_layer_num,
            preprocess_filter_num,  # 为了保证d_model在之后能够与head整除,尽量保证filter_num为使用masked-attention的倍数
            preprocess_kernel_size,
-           preprocess_stride):
+           preprocess_stride,
+           input_feature,
+           d_model,
+           dropout=0.1):
         """
         "Depthwise conv + Pointwise conv"
         考虑到参数过大,我们要通过卷积提取input_length中每一点的input_feature之间的相关信息并降低维度需要很多层,
@@ -155,6 +143,20 @@ class Preprocess_Layer_Conv(nn.Module):
             ))
         self.layer_sparse_conv = nn.ModuleList(layer_sparse_conv)
 
+        self.conv_out_fea = self._get_conv_out_fea(input_feature)  # 计算卷积后的维度
+        # print(self.conv_out_fea)
+
+        self.linear = nn.Linear(self.conv_out_fea, d_model)
+        self.activation = nn.ReLU(inplace = True)
+        self.dropout = nn.Dropout(dropout)
+
+    def _get_conv_out_fea(self, input_feature):
+        # 计算输出参数
+        o = torch.zeros(1, 1, 1, input_feature)
+        for layer in self.layer_sparse_conv:
+            o = layer(o)           
+        return int(np.prod(o.size()))
+
     def forward(self, x):
         x = x.unsqueeze(1)
         for layer in self.layer_sparse_conv:
@@ -169,4 +171,8 @@ class Preprocess_Layer_Conv(nn.Module):
         x = x.permute(0, 2, 1, 3).contiguous()
         size = x.size()
         x = x.view(*size[:2], -1)
+
+        x = self.activation(self.linear(x))
+        x = self.dropout(x)
+        
         return x       

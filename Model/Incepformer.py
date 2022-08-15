@@ -71,71 +71,75 @@ class Incepformer(nn.Module):
         super(Incepformer, self).__init__()
 
         # preprocess module parameter:
-        self.preprocess_type = preprocess_type
-        self.preprocess_layer_num = preprocess_layer_num
-        self.preprocess_filter_num = preprocess_filter_num
+        self.preprocess_type        = preprocess_type
+        self.preprocess_layer_num   = preprocess_layer_num
+        self.preprocess_filter_num  = preprocess_filter_num
         self.preprocess_kernel_size = preprocess_kernel_size
-        self.preprocess_stride = preprocess_stride
-        self.input_feature = input_feature
-        self.d_model = d_model
+        self.preprocess_stride      = preprocess_stride
+        self.input_feature          = input_feature
+        self.d_model                = d_model
 
         # encoder module parameter:
-        self.attention_layer_types = attention_layer_types
-        self.n_heads_full = n_heads_full
-        self.n_heads_local = n_heads_local
-        self.n_heads_log = n_heads_log
-        self.n_heads_prob = n_heads_prob
-        self.n_heads_auto = n_heads_auto
-        self.n_heads_fft = n_heads_fft
-        self.d_keys = d_keys
-        self.d_values = d_values
-        self.d_ff = d_ff
-        self.dropout = dropout
-        self.activation = activation
-        self.forward_kernel_size = forward_kernel_size
-        self.value_kernel_size = value_kernel_size
-        self.causal_kernel_size = causal_kernel_size
-        self.output_attention = output_attention
-        self.auto_moving_avg = auto_moving_avg
-        self.enc_layer_num = enc_layer_num
+        self.attention_layer_types  = attention_layer_types
+        self.n_heads_full           = n_heads_full
+        self.n_heads_local          = n_heads_local
+        self.n_heads_log            = n_heads_log
+        self.n_heads_prob           = n_heads_prob
+        self.n_heads_auto           = n_heads_auto
+        self.n_heads_fft            = n_heads_fft
+        self.d_keys                 = d_keys
+        self.d_values               = d_values
+        self.d_ff                   = d_ff
+        self.dropout                = dropout
+        self.activation             = activation
+        self.forward_kernel_size    = forward_kernel_size
+        self.value_kernel_size      = value_kernel_size
+        self.causal_kernel_size     = causal_kernel_size
+        self.output_attention       = output_attention
+        self.auto_moving_avg        = auto_moving_avg
+        self.enc_layer_num          = enc_layer_num
 
         # predictor module parameter:
-        self.predictor_type = predictor_type
-        self.input_length = input_length
+        self.predictor_type         = predictor_type
+        self.input_length           = input_length
+        
 
         # module
         if self.preprocess_type == "FC":
-            self.preprocess_layer = Preprocess_Layer_FC(input_feature = self.input_feature,
-                                   d_model = self.d_model).double()
+            self.preprocess_layer = Preprocess_Layer_FC(input_feature   = self.input_feature,
+                                                        d_model         = self.d_model).double()
         if self.preprocess_type == "STFT":
-            self.preprocess_layer = Preprocess_Layer_STFT(preprocess_layer_num = self.preprocess_layer_num,
-                                    preprocess_filter_num = self.preprocess_filter_num,  
-                                    preprocess_kernel_size = self.preprocess_kernel_size).double()
+            self.preprocess_layer = Preprocess_Layer_STFT(preprocess_layer_num      = self.preprocess_layer_num,
+                                                          preprocess_filter_num     = self.preprocess_filter_num,  
+                                                          preprocess_kernel_size    = self.preprocess_kernel_size).double()
         if self.preprocess_type == "Conv":
-            self.preprocess_layer = Preprocess_Layer_Conv(preprocess_layer_num = self.preprocess_layer_num,
-                                    preprocess_filter_num = self.preprocess_filter_num,  
-                                    preprocess_kernel_size = self.preprocess_kernel_size,
-                                    preprocess_stride = self.preprocess_stride).double()
+            self.preprocess_layer = Preprocess_Layer_Conv(preprocess_layer_num      = self.preprocess_layer_num,
+                                                          preprocess_filter_num     = self.preprocess_filter_num,  
+                                                          preprocess_kernel_size    = self.preprocess_kernel_size,
+                                                          preprocess_stride         = self.preprocess_stride,
+                                                          input_feature             = self.input_feature,
+                                                          d_model                   = self.d_model,
+                                                          dropout                   = self.dropout).double()
             
-        self.encoder = Encoder([Encoder_Layer(attention_layer_types = self.attention_layer_types,
-                            d_model = self.d_model,
-                            n_heads_full = self.n_heads_full,
-                            n_heads_local = self.n_heads_local,
-                            n_heads_log = self.n_heads_log,
-                            n_heads_prob = self.n_heads_prob,
-                            n_heads_auto = self.n_heads_auto,
-                            n_heads_fft = self.n_heads_fft,
-                            d_keys = self.d_keys,
-                            d_values = self.d_values,
-                            d_ff = self.d_ff,
-                            dropout = self.dropout,
-                            activation = self.activation,
-                            forward_kernel_size = self.forward_kernel_size,
-                            value_kernel_size = self.value_kernel_size,
-                            causal_kernel_size = self.causal_kernel_size,
-                            output_attention = self.output_attention,
-                            auto_moving_avg = self.auto_moving_avg)
-                for layer_num in range(self.enc_layer_num)]).double()
+        self.encoder = Encoder([Encoder_Layer(attention_layer_types     = self.attention_layer_types,
+                                              d_model                   = self.d_model,
+                                              n_heads_full              = self.n_heads_full,
+                                              n_heads_local             = self.n_heads_local,
+                                              n_heads_log               = self.n_heads_log,
+                                              n_heads_prob              = self.n_heads_prob,
+                                              n_heads_auto              = self.n_heads_auto,
+                                              n_heads_fft               = self.n_heads_fft,
+                                              d_keys                    = self.d_keys,
+                                              d_values                  = self.d_values,
+                                              d_ff                      = self.d_ff,
+                                              dropout                   = self.dropout,
+                                              activation                = self.activation,
+                                              forward_kernel_size       = self.forward_kernel_size,
+                                              value_kernel_size         = self.value_kernel_size,
+                                              causal_kernel_size        = self.causal_kernel_size,
+                                              output_attention          = self.output_attention,
+                                              auto_moving_avg           = self.auto_moving_avg)
+                                for layer_num in range(self.enc_layer_num)]).double()
 
         if self.predictor_type == "full":
             self.predictor = FullPredictor(d_model = self.d_model, input_length = self.input_length).double()

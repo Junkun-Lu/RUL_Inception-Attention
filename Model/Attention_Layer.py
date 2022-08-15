@@ -41,31 +41,31 @@ class Attention_Layer(nn.Module):
         self.value_kernel_size= value_kernel_size   # 用于计算values, 选择为1
 
         if self.type_attention != "FFT":
-            self.query_projection = nn.Conv1d(in_channels = input_dim, 
-                              out_channels = self.d_keys * self.n_heads_type, 
-                              kernel_size = self.causal_kernel_size)
+            self.query_projection = nn.Conv1d(in_channels   = input_dim, 
+                                              out_channels  = self.d_keys * self.n_heads_type, 
+                                              kernel_size   = self.causal_kernel_size)
             
-            self.key_projection = nn.Conv1d(in_channels = input_dim, 
-                            out_channels = self.d_keys * self.n_heads_type, 
-                            kernel_size = self.causal_kernel_size)
+            self.key_projection = nn.Conv1d(in_channels     = input_dim, 
+                                            out_channels    = self.d_keys * self.n_heads_type, 
+                                            kernel_size     = self.causal_kernel_size)
             
-            self.value_projection = nn.Conv1d(in_channels = input_dim, 
-                              out_channels = self.d_values * self.n_heads_type, 
-                              kernel_size = self.value_kernel_size) 
+            self.value_projection = nn.Conv1d(in_channels   = input_dim, 
+                                              out_channels  = self.d_values * self.n_heads_type, 
+                                              kernel_size   = self.value_kernel_size) 
 
         # fft_projection 专门用于FFT计算,得到fft层的input
         if self.type_attention == "FFT":
-            self.fft_projection = nn.Conv1d(in_channels = input_dim,
-                            out_channels = output_dim,
-                            kernel_size = self.value_kernel_size)
+            self.fft_projection = nn.Conv1d(in_channels     = input_dim,
+                                            out_channels    = output_dim,
+                                            kernel_size     = self.value_kernel_size)
 
         # 选择当前使用的attention type
         self.inner_attention = attention
 
         # out_projection
-        self.out_projection = nn.Conv1d(in_channels = self.d_values * self.n_heads_type,
-                         out_channels = output_dim,
-                         kernel_size = self.value_kernel_size)
+        self.out_projection = nn.Conv1d(in_channels     = self.d_values * self.n_heads_type,
+                                        out_channels    = output_dim,
+                                        kernel_size     = self.value_kernel_size)
         self.activation = nn.ReLU(inplace=True)
         self.resdi_dropout = nn.Dropout(resid_drop) 
 
@@ -94,8 +94,8 @@ class Attention_Layer(nn.Module):
             fft_values = values
             fft_padding_size = int(self.value_kernel_size/2)
             padding_fft = nn.functional.pad(fft_values.permute(0, 2, 1),
-                            pad = (fft_padding_size, fft_padding_size),
-                            mode = 'replicate')
+                                            pad     = (fft_padding_size, fft_padding_size),
+                                            mode    = 'replicate')
             fft_values = self.fft_projection(padding_fft).permute(0, 2, 1) # [B, L, output_dim] 
             
             out, attn = self.inner_attention(fft_values)
@@ -105,20 +105,20 @@ class Attention_Layer(nn.Module):
             # query, key, value projection
             queries_padding_size =  int(self.causal_kernel_size/2)
             padding_queries = nn.functional.pad(queries.permute(0, 2, 1),
-                              pad = (queries_padding_size, queries_padding_size),
-                              mode = 'replicate')
+                                                pad     = (queries_padding_size, queries_padding_size),
+                                                mode    = 'replicate')
             queries = self.query_projection(padding_queries).permute(0, 2, 1) # [B, L, d_k*n]   
 
             keys_padding_size =  int(self.causal_kernel_size/2)
             padding_keys = nn.functional.pad(keys.permute(0, 2, 1),
-                              pad = (keys_padding_size, keys_padding_size),
-                              mode = 'replicate')
+                                             pad    = (keys_padding_size, keys_padding_size),
+                                             mode   = 'replicate')
             keys = self.key_projection(padding_keys).permute(0, 2, 1) # [B, L, d_k*n]        
 
             values_padding_size = int(self.value_kernel_size/2)
             padding_values = nn.functional.pad(values.permute(0, 2, 1),
-                              pad = (values_padding_size, values_padding_size),
-                              mode = 'replicate')
+                                               pad  = (values_padding_size, values_padding_size),
+                                               mode = 'replicate')
             values = self.value_projection(padding_values).permute(0, 2, 1) # [B, L, d_v*n]        
 
 
@@ -133,8 +133,8 @@ class Attention_Layer(nn.Module):
             # return out的固定格式[B, L, output_dim]
             out = out.view(B, L_Q, -1)
             padding_out = nn.functional.pad(out.permute(0, 2, 1),
-                             pad = (values_padding_size, values_padding_size),
-                             mode = 'replicate')
+                                            pad     = (values_padding_size, values_padding_size),
+                                            mode    = 'replicate')
              
             out = self.activation(self.out_projection(padding_out)).permute(0, 2, 1)
             out = self.resdi_dropout(out)

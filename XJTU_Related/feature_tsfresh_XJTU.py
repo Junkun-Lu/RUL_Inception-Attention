@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 import pandas as pd
 import numpy as np
 from tsfresh.feature_selection.significance_tests import target_real_feature_real_test, target_real_feature_binary_test

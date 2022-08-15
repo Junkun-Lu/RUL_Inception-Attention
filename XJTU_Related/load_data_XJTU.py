@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 import pandas as pd
 import numpy as np
 import math
@@ -10,6 +12,7 @@ from XJTU_Related.feature_STFT_XJTU import vibration_train_picture, vibration_te
 from XJTU_Related.feature_STFT_XJTU import STFT_process, STFT_picture_train, STFT_picture_test
 from XJTU_Related.feature_STFT_XJTU import STFT_sliding_window
 from XJTU_Related.feature_tsfresh_XJTU import identify_and_remove_unique_columns, tsfresh_sliding_window
+from XJTU_Related.feature_vibration_XJTU import vibration_sliding_window
 
 
 
@@ -135,6 +138,65 @@ def train_test_generator(pre_process_type, root_dir, train_bearing_data_set, tes
     # 加载原始数据并组合,绘制rul与水平&纵向加速度图
     train_x_dataframe, train_y_dataframe, train_file_num_ls = data_load(root_dir, train_bearing_data_set, flag="train")
     test_x_dataframe, test_y_dataframe, test_file_num_ls = data_load(root_dir, test_bearing_data_set, flag="test")
+
+    # --------------------------------------- Vibration -------------------------------------------------------------------------------
+    if pre_process_type == "Vibration":
+        # 计算训练集和测试集的合力vibration, 再将训练集根据文件分为两个
+        train_x_dataframe["vibration"] = train_x_dataframe.apply(lambda x: math.sqrt(x['Horizontal_vibration_signals']**2 + x['Vertical_vibration_signals']**2), axis=1)
+        vibration_train_picture(train_x_dataframe, train_file_num_ls, train_bearing_data_set)
+        test_x_dataframe["vibration"] = test_x_dataframe.apply(lambda x: math.sqrt(x['Horizontal_vibration_signals']**2 + x['Vertical_vibration_signals']**2), axis=1)
+        vibration_test_picture(test_x_dataframe, test_bearing_data_set)
+
+        # **standarlization**        
+        vibration_train_x_np = train_x_dataframe[["vibration"]].values
+        vibration_test_x_np = test_x_dataframe[["vibration"]].values 
+
+        vibration_mean = np.mean(vibration_train_x_np, axis=0).reshape(-1, 1) 
+        vibration_std = np.std(vibration_train_x_np, axis=0).reshape(-1, 1) 
+
+        stand_train_vibration_feature = (vibration_train_x_np - vibration_mean) /  vibration_std
+        stand_test_vibration_feature = (vibration_test_x_np - vibration_mean) / vibration_std
+
+        # **split based file_num**
+        train_split_ls = []
+        for i in range(0, int(len(stand_train_vibration_feature)/32768)):
+            split_file_feature_train = stand_train_vibration_feature[32768*i:32768*(i+1), :]
+            split_file_feature_train = split_file_feature_train.transpose(1, 0)
+            train_split_ls.append(split_file_feature_train)
+        
+        train_file_splited_feature = np.concatenate(train_split_ls, axis=0)
+
+        test_split_ls = []
+        for i in range(0, int(len(stand_test_vibration_feature)/32768)):
+            split_file_feature_test = stand_test_vibration_feature[32768*i:32768*(i+1), :]
+            split_file_feature_test = split_file_feature_test.transpose(1, 0)
+            test_split_ls.append(split_file_feature_test)
+        
+        test_file_splited_feature = np.concatenate(test_split_ls, axis=0)
+
+
+        # **window_length**
+        # window_length_train
+        train_y_array = train_y_dataframe.values
+        win_train_x_ls, win_train_y_ls = [], []
+        for i in range(0, len(train_file_num_ls)):
+            split_trian_x_array = train_file_splited_feature[0:train_file_num_ls[i], :]
+            split_train_y_array = train_y_array[0:train_file_num_ls[i], :]
+            train_file_splited_feature = train_file_splited_feature[train_file_num_ls[i]:, :]
+            train_y_array = train_y_array[train_file_num_ls[i]:, :]
+
+            win_train_x, win_train_y = vibration_sliding_window(split_trian_x_array, split_train_y_array, window_length)
+            win_train_x_ls.append(win_train_x) 
+            win_train_y_ls.append(win_train_y)
+        X_train = np.concatenate(win_train_x_ls, axis=0)
+        y_train = np.concatenate(win_train_y_ls, axis=0)
+
+        print("the shape of training set is {0} and the shape of train label is {1}".format(X_train.shape, y_train.shape))
+
+        # window_length_test
+        test_y_array = test_y_dataframe.values
+        test_X, test_y = STFT_sliding_window(test_file_splited_feature, test_y_array, window_length)
+        print("the shape of test_X is {0} and the shape of test_y is {1}".format(test_X.shape, test_y.shape))     
 
     # --------------------------------------- STFT -------------------------------------------------------------------------------
     if pre_process_type == "STFT":        

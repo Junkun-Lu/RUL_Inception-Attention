@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 
 """
 In this file, the three datasets will be processed by the Dataset; 
-The output will be used as input to the Experiment_CMaps(gai).py.
+The output will be used as input to the Experiment_CMaps(gai).py
 """
 
 class CMAPSSData(Dataset):

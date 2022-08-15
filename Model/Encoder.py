@@ -43,8 +43,9 @@ class Encoder_Layer(nn.Module):
   
         """
         super(Encoder_Layer, self).__init__()
-        num_heads_type = len(attention_layer_types)      # 模型使用num_heads_type种masked_attention机制
-        d_model_each_type = int(d_model/num_heads_type)    # 每一种类型的attention分配的d_model, d_model_type = d_model_each_type
+
+        n_heads = n_heads_full + n_heads_local + n_heads_log + n_heads_prob + n_heads_auto + n_heads_fft
+        d_model_each_head = int(d_model / n_heads)
 
         # self.n_heads_full = n_heads_full
         # self.n_heads_local = n_heads_local
@@ -58,12 +59,12 @@ class Encoder_Layer(nn.Module):
         for type_attention in attention_layer_types:
             if type_attention == "Full":
                 attention_layer_list.append(Attention_Layer(attention = Full_Attention(mask_flag=False, 
-                                                    attention_dropout=dropout, 
-                                                    output_attention=output_attention),
+                                      attention_dropout=dropout, 
+                                      output_attention=output_attention),
                                       input_dim = d_model,
-                                      output_dim = d_model_each_type,
+                                      output_dim = d_model_each_head*n_heads_full,
                                       type_attention = type_attention,
-                                      d_model_type = d_model_each_type,
+                                      d_model_type = d_model_each_head*n_heads_full,
                                       n_heads_type = n_heads_full,
                                       d_keys = d_keys,
                                       d_values = d_values,
@@ -76,9 +77,9 @@ class Encoder_Layer(nn.Module):
                                                      attention_dropout=dropout, 
                                                      output_attention=output_attention),
                                       input_dim = d_model,
-                                      output_dim = d_model_each_type,
+                                      output_dim = d_model_each_head*n_heads_local,
                                       type_attention = type_attention,
-                                      d_model_type = d_model_each_type,
+                                      d_model_type = d_model_each_head*n_heads_local,
                                       n_heads_type = n_heads_local,
                                       d_keys = d_keys,
                                       d_values = d_values,
@@ -91,9 +92,9 @@ class Encoder_Layer(nn.Module):
                                                       attention_dropout=dropout, 
                                                       output_attention=output_attention),
                                       input_dim = d_model,
-                                      output_dim = d_model_each_type,
+                                      output_dim = d_model_each_head*n_heads_log,
                                       type_attention = type_attention,
-                                      d_model_type = d_model_each_type,
+                                      d_model_type = d_model_each_head*n_heads_log,
                                       n_heads_type = n_heads_log,
                                       d_keys = d_keys,
                                       d_values = d_values,
@@ -108,9 +109,9 @@ class Encoder_Layer(nn.Module):
                                                        attention_dropout=dropout,
                                                        output_attention=output_attention),
                                       input_dim = d_model,
-                                      output_dim = d_model_each_type,
+                                      output_dim = d_model_each_head*n_heads_prob,
                                       type_attention = type_attention,
-                                      d_model_type = d_model_each_type,
+                                      d_model_type = d_model_each_head*n_heads_prob,
                                       n_heads_type = n_heads_prob,
                                       d_keys = d_keys,
                                       d_values = d_values,
@@ -125,9 +126,9 @@ class Encoder_Layer(nn.Module):
                                                     attention_dropout=dropout,
                                                     output_attention=output_attention),
                                       input_dim = d_model,
-                                      output_dim = d_model_each_type,
+                                      output_dim = d_model_each_head*n_heads_auto,
                                       type_attention = type_attention,
-                                      d_model_type = d_model_each_type,
+                                      d_model_type = d_model_each_head*n_heads_auto,
                                       n_heads_type = n_heads_auto,
                                       d_keys = d_keys,
                                       d_values = d_values,
@@ -138,9 +139,9 @@ class Encoder_Layer(nn.Module):
             if type_attention == "FFT":
                  attention_layer_list.append(Attention_Layer(attention = FFT_Attention(),
                                        input_dim = d_model,
-                                       output_dim = d_model_each_type,
+                                       output_dim = d_model_each_head*n_heads_fft,
                                        type_attention = type_attention,
-                                       d_model_type = d_model_each_type,
+                                       d_model_type = d_model_each_head*n_heads_fft,
                                        n_heads_type = n_heads_fft,
                                        d_keys = d_keys,
                                        d_values = d_values,

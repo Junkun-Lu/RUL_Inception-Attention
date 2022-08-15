@@ -72,7 +72,8 @@ class Attention_Layer(nn.Module):
         # decomp block
         """这个是和muti_head组合在一起发生的,通过Auto-correlation得到数据的out_value, out_attn两个参数后,
         判断是否为Auto-Attention, 如果是,则增加decomp block, 划分趋势与周期
-        ??? 文中Autoformer主要考虑了周期之间的信息,考虑的是交通等数据, 但是在RUL中,周期性不明显,是否用趋势会更好??
+        ??? 文中Autoformer主要考虑了周期之间的信息,考虑的是交通等数据, 但是在RUL中,周期性不明显,是否用趋势会更好???
+        原文中在Encoder关注周期,Decoder关注趋势
         输出在整合在一起做ADD&NORM
         """
         if self.type_attention == "Auto":

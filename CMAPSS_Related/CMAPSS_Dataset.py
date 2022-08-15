@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 from torch.utils.data import Dataset
 
 """
@@ -8,9 +10,9 @@ The output will be used as input to the Experiment_CMaps(gai).py.
 class CMAPSSData(Dataset):
 
     def __init__(self, data_x, data_y):
-        self.data_x = data_x
-        self.data_y = data_y
-        self.data_channel = data_x.shape[2]
+        self.data_x         = data_x
+        self.data_y         = data_y
+        self.data_channel   = data_x.shape[2]
 
     def __getitem__(self, index):
         sample_x = self.data_x[index]

@@ -8,11 +8,15 @@ import torch.nn as nn
 from time import time
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
+
 from CMAPSS_Related.load_data_CMAPSS import cmapss_data_train_vali_loader
 from CMAPSS_Related.CMAPSS_Dataset import CMAPSSData
 from FEMTO_Related.load_data_FEMTO import train_test_generator_FEMTO
 from FEMTO_Related.FEMTO_Dataset import FEMTOData
+from XJTU_Related.load_data_XJTU import train_test_generator_XJTU
+from XJTU_Related.XJTU_Dataset import XJTUData
 from torch.utils.data import DataLoader
+
 from Model.Incepformer import Incepformer
 from Experiment.Early_Stopping import EarlyStopping
 from Experiment.learining_rate_adjust import adjust_learning_rate_class
@@ -42,9 +46,8 @@ class Exp_Inception_Attention(object):
 
         
         # load XJTU dataset
-        # if self.args.dataset_name == "XJTU":    
-            # self.train_data, self.train_loader, self.vali_data, self.vali_loader = self._get_data_XJTU(flag='train')
-            # self.test_data, self.test_loader = self._get_data_XJTU(flag='test')
+        if self.args.dataset_name == "XJTU":  
+            self.train_loader, self.vali_loader, self.test_loader = self._get_data_XJTU()
 
         # build the Inception-Attention Model:
         self.model = self._get_model()
@@ -52,6 +55,11 @@ class Exp_Inception_Attention(object):
         # What optimisers and loss functions can be used by the model
         self.optimizer_dict = {"Adam": optim.Adam}
         self.criterion_dict = {"MSE": nn.MSELoss, "CrossEntropy": nn.CrossEntropyLoss, "WeightMSE":Weighted_MSE_Loss, "smooth_mse":MSE_Smoothness_Loss}
+
+        # get parameter
+        for fea, label in self.test_loader:
+            self.input_feature =  fea.shape[-1]
+            break
 
     # choose device
     def _acquire_device(self):
@@ -71,7 +79,7 @@ class Exp_Inception_Attention(object):
                             preprocess_filter_num   = self.args.preprocess_filter_num,  
                             preprocess_kernel_size  = self.args.preprocess_kernel_size,
                             preprocess_stride       = self.args.preprocess_stride,
-                            input_feature           = self.args.input_feature,
+                            input_feature           = self.input_feature,
                             d_model                 = self.args.d_model,
                             
                             attention_layer_types   = self.args.attention_layer_types,
@@ -202,7 +210,39 @@ class Exp_Inception_Attention(object):
 
 
     #  function of load XJTU Dataset
-    # def _get_data_XJTU(self, flag="train"):
+    def _get_data_XJTU(self):
+        args = self.args
+        train_X, vali_X, test_X, train_y, vali_y, test_y = train_test_generator_XJTU(pre_process_type          = args.pre_process_type_XJTU, 
+                                                                                     train_root_dir            = args.train_root_dir_XJTU,
+                                                                                     train_bearing_data_set    = args.train_bearing_data_set_XJTU, 
+                                                                                     test_root_dir             = args.test_root_dir_XJTU, 
+                                                                                     test_bearing_data_set     = args.test_bearing_data_set_XJTU, 
+                                                                                     STFT_window_len           = args.STFT_window_len_XJTU, 
+                                                                                     STFT_overlap_num          = args.STFT_overlap_num_XJTU, 
+                                                                                     window_length             = args.input_length, 
+                                                                                     validation_rate           = args.validation)
+        train_data = XJTUData(train_X, train_y)
+        train_loader = DataLoader(dataset       = train_data, 
+                                  batch_size    = args.batch_size, 
+                                  shuffle       = True, 
+                                  num_workers   = 0, 
+                                  drop_last     = False)
+
+        vali_data = XJTUData(vali_X, vali_y)
+        vali_loader = DataLoader(dataset        = vali_data, 
+                                 batch_size     = args.batch_size, 
+                                 shuffle        = False, 
+                                 num_workers    = 0, 
+                                 drop_last      = False)
+
+        test_data = XJTUData(test_X, test_y)
+        test_loader = DataLoader(dataset        = test_data, 
+                                 batch_size     = args.batch_size, 
+                                 shuffle        = False, 
+                                 num_workers    = 0, 
+                                 drop_last      = False)
+        
+        return train_loader, vali_loader, test_loader
 
     # -------------------------------------------- training function -----------------------------------
     def train(self, save_path):
@@ -287,11 +327,15 @@ class Exp_Inception_Attention(object):
         # test:
         if self.args.dataset_name == "CMAPSS":
             average_enc_loss, average_enc_overall_loss = self.test(self.test_loader)
-            print("test performace of enc is: ", average_enc_loss, " of enc overall is: ", average_enc_overall_loss)
+            print("CMAPSS: test performace of enc is: ", average_enc_loss, " of enc overall is: ", average_enc_overall_loss)
 
         if self.args.dataset_name == "FEMTO":
             abs_percentage_error = self.test(self.test_loader)
-            print("test performance of mean absolute percentage error is:", abs_percentage_error)
+            print("FEMTO: test performance of mean absolute percentage error is:", abs_percentage_error)
+
+        if self.args.dataset_name == "XJTU":
+            abs_percentage_error = self.test(self.test_loader)
+            print("XJTU: test performance of mean absolute percentage error is:", abs_percentage_error)
 
     # ---------------------------------- validation function -----------------------------------------
     def validation(self, vali_loader, criterion):
@@ -353,7 +397,24 @@ class Exp_Inception_Attention(object):
             plt.ylabel("rul_time")
             plt.show()
 
-            print("the real remaining useful life is:", actual_rul[-1])
-            print("the predicted remaining useful life is:", pred_rul[-1])
+            print("the real remaining useful life is:", actual_rul[-1] * 10)
+            print("the predicted remaining useful life is:", pred_rul[-1] * 10)
+            abs_percentage_error = np.abs((pred_rul[-1] - actual_rul[-1])/actual_rul[-1]) * 100
+            return abs_percentage_error
+
+        if self.args.dataset_name == "XJTU":
+            #  ---------------- visualization -------------------------------- 
+            actual_rul = gt[:, -1]
+            pred_rul = enc_pred[:, -1]
+            x = range(1, len(pred_rul)+1)
+            plt.figure(figsize=(12, 3))
+            plt.plot(x, actual_rul, color='r', label="real_rul") 
+            plt.plot(x, pred_rul, color='g', label="predicted_rul") 
+            plt.xlabel("sample_time")
+            plt.ylabel("rul_time")
+            plt.show()
+
+            print("the real remaining useful life is:", actual_rul[-1] * 60)
+            print("the predicted remaining useful life is:", pred_rul[-1] * 60)
             abs_percentage_error = np.abs((pred_rul[-1] - actual_rul[-1])/actual_rul[-1]) * 100
             return abs_percentage_error

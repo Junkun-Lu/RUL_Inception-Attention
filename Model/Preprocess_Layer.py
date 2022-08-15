@@ -107,8 +107,8 @@ class Preprocess_Layer_Conv(nn.Module):
         考虑到参数过大,我们要通过卷积提取input_length中每一点的input_feature之间的相关信息并降低维度需要很多层,
         防止层数过多导致参数过大, 采用Separable Convolution降低维度???
         input.shape = [B, L, F]   -->  [B, 1, L, F]
-        卷积后为 [B, C, L, F']  -->  Global AvgPool [B, L, C, 1]
-        output.shape = [B, L, C*1] = [B, L, D], C为Encoder中选用的masked-attention的种类个数
+        卷积后为 [B, C, L, F']  -->  output.shape 
+        =>线性层 [B, L, C*F'] = [B, L, D], C为Encoder中选用的masked-attention的种类个数
         """
         super(Preprocess_Layer_Conv, self).__init__()
 

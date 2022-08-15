@@ -10,8 +10,10 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
 from CMAPSS_Related.load_data_CMAPSS import cmapss_data_train_vali_loader
 from CMAPSS_Related.CMAPSS_Dataset import CMAPSSData
+from FEMTO_Related.load_data_FEMTO import train_test_generator_FEMTO
+from FEMTO_Related.FEMTO_Dataset import FEMTOData
 from torch.utils.data import DataLoader
-from Model.Inception_Attention import Inception_Attention
+from Model.Incepformer import Incepformer
 from Experiment.Early_Stopping import EarlyStopping
 from Experiment.learining_rate_adjust import adjust_learning_rate_class
 from Experiment.HTS_Loss_Function import HTSLoss
@@ -27,15 +29,17 @@ class Exp_Inception_Attention(object):
     def __init__(self, args):
         self.args = args
 
+        self.device = self._acquire_device()
+
         # load CMAPSS dataset
         if self.args.dataset_name == "CMAPSS":   
             self.train_data, self.train_loader, self.vali_data, self.vali_loader = self._get_data_CMPASS(flag='train')
             self.test_data, self.test_loader = self._get_data_CMPASS(flag='test')
         
         # load FEMTO dataset
-        # if self.args.dataset_name == "FEMTO":  
-            # self.train_data, self.train_loader, self.vali_data, self.vali_loader = self._get_data_FEMTO(flag='train')
-            # self.test_data, self.test_loader = self._get_data_FEMTO(flag='test')
+        if self.args.dataset_name == "FEMTO":  
+            self.train_loader, self.vali_loader, self.test_loader = self._get_data_FEMTO()
+
         
         # load XJTU dataset
         # if self.args.dataset_name == "XJTU":    
@@ -49,29 +53,51 @@ class Exp_Inception_Attention(object):
         self.optimizer_dict = {"Adam": optim.Adam}
         self.criterion_dict = {"MSE": nn.MSELoss, "CrossEntropy": nn.CrossEntropyLoss, "WeightMSE":Weighted_MSE_Loss, "smooth_mse":MSE_Smoothness_Loss}
 
+    # choose device
+    def _acquire_device(self):
+        if self.args.use_gpu:
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(self.args.gpu)
+            device = torch.device('cuda:0')
+            print('Use GPU: cuda:0')
+        else:
+            device = torch.device('cpu')
+            print('Use CPU')
+        return device
+
     # ------------------- function to build model -------------------------------------
     def _get_model(self):
-        model = Inception_Attention(dropout        =  self.args.dropout,
-                                    d_model        =  self.args.d_model,
-                                    max_len        =  self.args.max_len,
-                                    d_k            =  self.args.d_k,
-                                    d_v            =  self.args.d_v,
-
-                                    n_heads_full   =  self.args.n_heads_full,
-                                    n_heads_log    =  self.args.n_heads_log,
-                                    n_heads_local  =  self.args.n_heads_local,
-                                    n_heads_prob   =  self.args.n_heads_prob,
-                                    n_heads_FFT    =  self.args.n_heads_FFT,
-                                    n_heads_auto   =  self.args.n_heads_auto,
-                                    moving_avg     =  self.args.moving_avg,
-                                    d_ff           =  self.args.d_ff,
-                                    n_layers       =  self.args.n_layers,
-                                    device         =  self.args.device,
-                                    
-                                    predictor_type =  self.args.predictor_type)
+        model = Incepformer(preprocess_type         = self.args.preprocess_type,
+                            preprocess_layer_num    = self.args.preprocess_layer_num,
+                            preprocess_filter_num   = self.args.preprocess_filter_num,  
+                            preprocess_kernel_size  = self.args.preprocess_kernel_size,
+                            preprocess_stride       = self.args.preprocess_stride,
+                            input_feature           = self.args.input_feature,
+                            d_model                 = self.args.d_model,
+                            
+                            attention_layer_types   = self.args.attention_layer_types,
+                            n_heads_full            = self.args.n_heads_full,
+                            n_heads_local           = self.args.n_heads_local,
+                            n_heads_log             = self.args.n_heads_log,
+                            n_heads_prob            = self.args.n_heads_prob,
+                            n_heads_auto            = self.args.n_heads_auto,
+                            n_heads_fft             = self.args.n_heads_fft,
+                            d_keys                  = self.args.d_keys,
+                            d_values                = self.args.d_values,
+                            d_ff                    = self.args.d_ff,
+                            dropout                 = self.args.dropout,
+                            activation              = self.args.activation,
+                            forward_kernel_size     = self.args.forward_kernel_size,
+                            value_kernel_size       = self.args.value_kernel_size,
+                            causal_kernel_size      = self.args.causal_kernel_size,
+                            output_attention        = self.args.output_attention,
+                            auto_moving_avg         = self.args.auto_moving_avg,
+                            enc_layer_num           = self.args.enc_layer_num,
+                            
+                            predictor_type          = self.args.predictor_type,
+                            input_length            = self.args.input_length)
         print("Parameter :", np.sum([para.numel() for para in model.parameters()]))
         
-        return model.double().to(self.args.device)
+        return model.double().to(self.device)
 
     # --------------------------- select optimizer ------------------------------
     def _select_optimizer(self):
@@ -96,13 +122,13 @@ class Exp_Inception_Attention(object):
         args = self.args
         if flag == 'train':
             # train and validation dataset
-            X_train, y_train, X_vali, y_vali = cmapss_data_train_vali_loader(data_path        =  args.data_path,
-                                                                             Data_id          =  args.Data_id,
+            X_train, y_train, X_vali, y_vali = cmapss_data_train_vali_loader(data_path        =  args.data_path_CMPASS,
+                                                                             Data_id          =  args.Data_id_CMPASS,
                                                                              flag             =  "train",
-                                                                             sequence_length  =  args.max_len,
-                                                                             MAXLIFE          =  args.MAXLIFE,
-                                                                             difference       =  args.difference,
-                                                                             normalization    =  args.normalization,
+                                                                             sequence_length  =  args.input_length,
+                                                                             MAXLIFE          =  args.MAXLIFE_CMPASS,
+                                                                             difference       =  args.difference_CMPASS,
+                                                                             normalization    =  args.normalization_CMPASS,
                                                                              validation       =  args.validation)
             train_data_set = CMAPSSData(X_train, y_train)
             vali_data_set = CMAPSSData(X_vali, y_vali)
@@ -122,13 +148,13 @@ class Exp_Inception_Attention(object):
 
         else:
             # test dataset
-            X_test, y_test = cmapss_data_train_vali_loader(data_path        =  args.data_path,
-                                                           Data_id          =  args.Data_id,
+            X_test, y_test = cmapss_data_train_vali_loader(data_path        =  args.data_path_CMPASS,
+                                                           Data_id          =  args.Data_id_CMPASS,
                                                            flag             =  "test",
-                                                           sequence_length  =  args.max_len,
-                                                           MAXLIFE          =  args.MAXLIFE,
-                                                           difference       =  args.difference,
-                                                           normalization    =  args.normalization,
+                                                           sequence_length  =  args.input_length,
+                                                           MAXLIFE          =  args.MAXLIFE_CMPASS,
+                                                           difference       =  args.difference_CMPASS,
+                                                           normalization    =  args.normalization_CMPASS,
                                                            validation       =  args.validation)
             test_data_set = CMAPSSData(X_test, y_test)
             test_data_loader = DataLoader(dataset      =  test_data_set,
@@ -140,7 +166,39 @@ class Exp_Inception_Attention(object):
 
     
     #  function of load FEMTO Dataset
-    # def _get_data_FEMTO(self, flag="train"):
+    def _get_data_FEMTO(self):
+        args = self.args
+        train_X, vali_X, test_X, train_y, vali_y, test_y = train_test_generator_FEMTO(pre_process_type          = args.pre_process_type_FEMTO, 
+                                                                                      train_root_dir            = args.train_root_dir_FEMTO,
+                                                                                      train_bearing_data_set    = args.train_bearing_data_set_FEMTO, 
+                                                                                      test_root_dir             = args.test_root_dir_FEMTO, 
+                                                                                      test_bearing_data_set     = args.test_bearing_data_set_FEMTO, 
+                                                                                      STFT_window_len           = args.STFT_window_len_FEMTO, 
+                                                                                      STFT_overlap_num          = args.STFT_overlap_num_FEMTO, 
+                                                                                      window_length             = args.input_length, 
+                                                                                      validation_rate           = args.validation)
+        train_data = FEMTOData(train_X, train_y)
+        train_loader = DataLoader(dataset       = train_data, 
+                                  batch_size    = args.batch_size, 
+                                  shuffle       = True, 
+                                  num_workers   = 0, 
+                                  drop_last     = False)
+
+        vali_data = FEMTOData(vali_X, vali_y)
+        vali_loader = DataLoader(dataset        = vali_data, 
+                                 batch_size     = args.batch_size, 
+                                 shuffle        = False, 
+                                 num_workers    = 0, 
+                                 drop_last      = False)
+
+        test_data = FEMTOData(test_X, test_y)
+        test_loader = DataLoader(dataset        = test_data, 
+                                 batch_size     = args.batch_size, 
+                                 shuffle        = False, 
+                                 num_workers    = 0, 
+                                 drop_last      = False)
+        
+        return train_loader, vali_loader, test_loader
 
 
     #  function of load XJTU Dataset
@@ -171,12 +229,12 @@ class Exp_Inception_Attention(object):
         # choose loss function
         # loss_criterion = self._select_criterion().to(self.args.device)
         loss_criterion = HTSLoss(enc_pred_loss = self.args.enc_pred_loss, 
-                                 seq_length    = self.args.max_len,
+                                 seq_length    = self.args.input_length,
                                  weight_type   = self.args.weight_type,
                                  sigma_faktor  = self.args.sigma_faktor,
                                  anteil        = self.args.anteil,
                                  smooth_loss   = self.args.smooth_loss,
-                                 device        = self.args.device)
+                                 device        = self.device)
 
         # training process
         print("start training")
@@ -191,8 +249,8 @@ class Exp_Inception_Attention(object):
                 iter_count += 1
                 model_optim.zero_grad()
 
-                batch_x = batch_x.double().to(self.args.device)
-                batch_y = batch_y.double().to(self.args.device)
+                batch_x = batch_x.double().to(self.device)
+                batch_y = batch_y.double().to(self.device)
 
                 # model prediction
                 outputs = self.model(batch_x)
@@ -226,8 +284,14 @@ class Exp_Inception_Attention(object):
         last_model_path = path + '/' + 'last_checkpoint.pth'
         torch.save(self.model.state_dict(), last_model_path)
 
-        average_enc_loss, average_enc_overall_loss = self.test(self.test_loader)
-        print("test performace of enc is: ", average_enc_loss, " of enc overall is: ", average_enc_overall_loss)
+        # test:
+        if self.args.dataset_name == "CMAPSS":
+            average_enc_loss, average_enc_overall_loss = self.test(self.test_loader)
+            print("test performace of enc is: ", average_enc_loss, " of enc overall is: ", average_enc_overall_loss)
+
+        if self.args.dataset_name == "FEMTO":
+            abs_percentage_error = self.test(self.test_loader)
+            print("test performance of mean absolute percentage error is:", abs_percentage_error)
 
     # ---------------------------------- validation function -----------------------------------------
     def validation(self, vali_loader, criterion):
@@ -235,8 +299,8 @@ class Exp_Inception_Attention(object):
         total_loss = []
 
         for i, (batch_x, batch_y) in enumerate(vali_loader):
-            batch_x = batch_x.double().to(self.args.device)
-            batch_y = batch_y.double().to(self.args.device)
+            batch_x = batch_x.double().to(self.device)
+            batch_y = batch_y.double().to(self.device)
 
             # prediction
             outputs = self.model(batch_x)
@@ -256,8 +320,8 @@ class Exp_Inception_Attention(object):
         enc_pred = []
         gt = []
         for i, (batch_x, batch_y) in enumerate(test_loader):
-            batch_x = batch_x.double().double().to(self.args.device)
-            batch_y = batch_y.double().double().to(self.args.device)
+            batch_x = batch_x.double().double().to(self.device)
+            batch_y = batch_y.double().double().to(self.device)
 
             outputs = self.model(batch_x)
 
@@ -267,21 +331,29 @@ class Exp_Inception_Attention(object):
             gt.append(batch_y)
             enc_pred.append(enc)
 
-        gt = np.concatenate(gt).reshape(-1, self.args.max_len)
-        enc_pred = np.concatenate(enc_pred).reshape(-1, self.args.max_len)
-        average_enc_loss = np.sqrt(mean_squared_error(enc_pred[:, -1], gt[:, -1]))
+        gt = np.concatenate(gt).reshape(-1, self.args.input_length)
+        enc_pred = np.concatenate(enc_pred).reshape(-1, self.args.input_length)
         
-        #  ---------------- visualization -------------------------------- 
-        # actual_rul = gt[:, -1]
-        # pred_rul = enc_pred[:, -1]
-        # x = range(1, len(pred_rul)+1)
-        # plt.figure(figsize=(12, 3))
-        # plt.plot(x, actual_rul, color='r', label="real_rul") 
-        # plt.plot(x, pred_rul, color='g', label="predicted_rul") 
-        # plt.xlabel("sample_time")
-        # plt.ylabel("rul_time")
-        # plt.show()
 
-        average_enc_overall_loss = np.sqrt(mean_squared_error(enc_pred, gt))
+        if self.args.dataset_name == "CMAPSS":
+            average_enc_loss = np.sqrt(mean_squared_error(enc_pred[:, -1], gt[:, -1]))
+            average_enc_overall_loss = np.sqrt(mean_squared_error(enc_pred, gt))
+        
+            return average_enc_loss, average_enc_overall_loss
 
-        return average_enc_loss, average_enc_overall_loss
+        if self.args.dataset_name == "FEMTO":
+            #  ---------------- visualization -------------------------------- 
+            actual_rul = gt[:, -1]
+            pred_rul = enc_pred[:, -1]
+            x = range(1, len(pred_rul)+1)
+            plt.figure(figsize=(12, 3))
+            plt.plot(x, actual_rul, color='r', label="real_rul") 
+            plt.plot(x, pred_rul, color='g', label="predicted_rul") 
+            plt.xlabel("sample_time")
+            plt.ylabel("rul_time")
+            plt.show()
+
+            print("the real remaining useful life is:", actual_rul[-1])
+            print("the predicted remaining useful life is:", pred_rul[-1])
+            abs_percentage_error = np.abs((pred_rul[-1] - actual_rul[-1])/actual_rul[-1]) * 100
+            return abs_percentage_error

@@ -130,13 +130,13 @@ class Exp_Inception_Attention(object):
         args = self.args
         if flag == 'train':
             # train and validation dataset
-            X_train, y_train, X_vali, y_vali = cmapss_data_train_vali_loader(data_path        =  args.data_path_CMPASS,
-                                                                             Data_id          =  args.Data_id_CMPASS,
+            X_train, y_train, X_vali, y_vali = cmapss_data_train_vali_loader(data_path        =  args.data_path_CMAPSS,
+                                                                             Data_id          =  args.Data_id_CMAPSS,
                                                                              flag             =  "train",
                                                                              sequence_length  =  args.input_length,
-                                                                             MAXLIFE          =  args.MAXLIFE_CMPASS,
-                                                                             difference       =  args.difference_CMPASS,
-                                                                             normalization    =  args.normalization_CMPASS,
+                                                                             MAXLIFE          =  args.MAXLIFE_CMAPSS,
+                                                                             difference       =  args.difference_CMAPSS,
+                                                                             normalization    =  args.normalization_CMAPSS,
                                                                              validation       =  args.validation)
             train_data_set = CMAPSSData(X_train, y_train)
             vali_data_set = CMAPSSData(X_vali, y_vali)
@@ -156,13 +156,13 @@ class Exp_Inception_Attention(object):
 
         else:
             # test dataset
-            X_test, y_test = cmapss_data_train_vali_loader(data_path        =  args.data_path_CMPASS,
-                                                           Data_id          =  args.Data_id_CMPASS,
+            X_test, y_test = cmapss_data_train_vali_loader(data_path        =  args.data_path_CMAPSS,
+                                                           Data_id          =  args.Data_id_CMAPSS,
                                                            flag             =  "test",
                                                            sequence_length  =  args.input_length,
-                                                           MAXLIFE          =  args.MAXLIFE_CMPASS,
-                                                           difference       =  args.difference_CMPASS,
-                                                           normalization    =  args.normalization_CMPASS,
+                                                           MAXLIFE          =  args.MAXLIFE_CMAPSS,
+                                                           difference       =  args.difference_CMAPSS,
+                                                           normalization    =  args.normalization_CMAPSS,
                                                            validation       =  args.validation)
             test_data_set = CMAPSSData(X_test, y_test)
             test_data_loader = DataLoader(dataset      =  test_data_set,
@@ -213,14 +213,14 @@ class Exp_Inception_Attention(object):
     def _get_data_XJTU(self):
         args = self.args
         train_X, vali_X, test_X, train_y, vali_y, test_y = train_test_generator_XJTU(pre_process_type          = args.pre_process_type_XJTU, 
-                                                                                     train_root_dir            = args.train_root_dir_XJTU,
+                                                                                     root_dir                  = args.root_dir_XJTU,
                                                                                      train_bearing_data_set    = args.train_bearing_data_set_XJTU, 
-                                                                                     test_root_dir             = args.test_root_dir_XJTU, 
                                                                                      test_bearing_data_set     = args.test_bearing_data_set_XJTU, 
                                                                                      STFT_window_len           = args.STFT_window_len_XJTU, 
                                                                                      STFT_overlap_num          = args.STFT_overlap_num_XJTU, 
                                                                                      window_length             = args.input_length, 
                                                                                      validation_rate           = args.validation)
+                                                                                     
         train_data = XJTUData(train_X, train_y)
         train_loader = DataLoader(dataset       = train_data, 
                                   batch_size    = args.batch_size, 

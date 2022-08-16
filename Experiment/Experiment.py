@@ -38,16 +38,16 @@ class Exp_Inception_Attention(object):
         # load CMAPSS dataset
         if self.args.dataset_name == "CMAPSS":   
             self.train_data, self.train_loader, self.vali_data, self.vali_loader = self._get_data_CMPASS(flag='train')
-            self.test_data, self.test_loader = self._get_data_CMPASS(flag='test')
+            self.test_data, self.test_loader, self.input_feature = self._get_data_CMPASS(flag='test')
         
         # load FEMTO dataset
         if self.args.dataset_name == "FEMTO":  
-            self.train_loader, self.vali_loader, self.test_loader = self._get_data_FEMTO()
+            self.train_loader, self.vali_loader, self.test_loader, self.input_feature = self._get_data_FEMTO()
 
         
         # load XJTU dataset
         if self.args.dataset_name == "XJTU":  
-            self.train_loader, self.vali_loader, self.test_loader = self._get_data_XJTU()
+            self.train_loader, self.vali_loader, self.test_loader, self.input_feature = self._get_data_XJTU()
 
         # build the Inception-Attention Model:
         self.model = self._get_model()
@@ -55,11 +55,6 @@ class Exp_Inception_Attention(object):
         # What optimisers and loss functions can be used by the model
         self.optimizer_dict = {"Adam": optim.Adam}
         self.criterion_dict = {"MSE": nn.MSELoss, "CrossEntropy": nn.CrossEntropyLoss, "WeightMSE":Weighted_MSE_Loss, "smooth_mse":MSE_Smoothness_Loss}
-
-        # get parameter
-        for fea, label in self.test_loader:
-            self.input_feature =  fea.shape[-1]
-            break
 
     # choose device
     def _acquire_device(self):
@@ -164,13 +159,14 @@ class Exp_Inception_Attention(object):
                                                            difference       =  args.difference_CMAPSS,
                                                            normalization    =  args.normalization_CMAPSS,
                                                            validation       =  args.validation)
+            input_fea = X_test.shape[-1]
             test_data_set = CMAPSSData(X_test, y_test)
             test_data_loader = DataLoader(dataset      =  test_data_set,
                                           batch_size   =  args.batch_size,
                                           shuffle      =  False,
                                           num_workers  =  0,
                                           drop_last    =  False)
-            return test_data_set, test_data_loader
+            return test_data_set, test_data_loader, input_fea
 
     
     #  function of load FEMTO Dataset
@@ -206,7 +202,9 @@ class Exp_Inception_Attention(object):
                                  num_workers    = 0, 
                                  drop_last      = False)
         
-        return train_loader, vali_loader, test_loader
+        input_fea = test_X.shape[-1]
+        
+        return train_loader, vali_loader, test_loader, input_fea
 
 
     #  function of load XJTU Dataset
@@ -242,7 +240,9 @@ class Exp_Inception_Attention(object):
                                  num_workers    = 0, 
                                  drop_last      = False)
         
-        return train_loader, vali_loader, test_loader
+        input_fea = test_X.shape[-1]
+        
+        return train_loader, vali_loader, test_loader, input_fea
 
     # -------------------------------------------- training function -----------------------------------
     def train(self, save_path):

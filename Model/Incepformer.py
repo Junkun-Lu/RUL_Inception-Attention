@@ -202,4 +202,4 @@ class Incepformer(nn.Module):
         if self.output_attention:
             return enc_pred, attns_list    
         else:
-            return enc_pred   
+            return enc_pred, None   

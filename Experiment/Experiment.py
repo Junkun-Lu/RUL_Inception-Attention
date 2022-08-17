@@ -293,7 +293,7 @@ class Exp_Inception_Attention(object):
                 batch_y = batch_y.double().to(self.device)
 
                 # model prediction
-                outputs = self.model(batch_x)
+                outputs, attn_list = self.model(batch_x)
 
                 loss = loss_criterion(outputs, batch_y)
 
@@ -347,7 +347,7 @@ class Exp_Inception_Attention(object):
             batch_y = batch_y.double().to(self.device)
 
             # prediction
-            outputs = self.model(batch_x)
+            outputs, attn_list = self.model(batch_x)
 
             loss = criterion(outputs, batch_y)
 
@@ -367,7 +367,7 @@ class Exp_Inception_Attention(object):
             batch_x = batch_x.double().double().to(self.device)
             batch_y = batch_y.double().double().to(self.device)
 
-            outputs = self.model(batch_x)
+            outputs, attn_list = self.model(batch_x)
 
             batch_y = batch_y.detach().cpu().numpy()
             enc = outputs.detach().cpu().numpy()

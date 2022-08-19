@@ -163,10 +163,10 @@ class Preprocess_Layer_Conv(nn.Module):
             x = layer(x)
 
         # global avgpooling
-        B, C, L, Fea = x.shape
-        x = F.avg_pool2d(input = x, 
-                 kernel_size = (1, Fea), 
-                 stride = (1, 1))
+        # B, C, L, Fea = x.shape
+        # x = F.avg_pool2d(input = x, 
+        #          kernel_size = (1, Fea), 
+        #          stride = (1, 1))
         # print(x.shape)
         x = x.permute(0, 2, 1, 3).contiguous()
         size = x.size()
